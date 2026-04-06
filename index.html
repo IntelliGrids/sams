@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SAMS — Station Reporting</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}html{font-size:14px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f2f5;color:#1a1a2e;min-height:100dvh;padding-bottom:72px}
+:root{--p:#0c4a6e;--pl:#0369a1;--pb:#e0f2fe;--a:#d97706;--ab:#fffbeb;--ok:#15803d;--okb:#dcfce7;--er:#dc2626;--erb:#fef2f2;--pe:#7c3aed;--peb:#f5f3ff;--g50:#f9fafb;--g100:#f3f4f6;--g200:#e5e7eb;--g300:#d1d5db;--g400:#9ca3af;--g500:#6b7280;--g600:#4b5563;--g700:#374151;--r:8px;--rl:12px;--s:0 1px 3px rgba(0,0,0,.08)}
+.bar{background:linear-gradient(135deg,var(--p),#075985);color:#fff;padding:12px 16px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.15)}.bar-t{font-size:15px;font-weight:600}.bar-n{font-size:12px;color:#fbbf24;font-weight:500;margin-top:3px}.bar-r{display:flex;justify-content:space-between;align-items:center}
+.cnt{max-width:640px;margin:0 auto;padding:12px}
+.bnav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--g200);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom)}.ni{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 2px 6px;font-size:9px;color:var(--g400);cursor:pointer;border:none;background:none}.ni.on{color:var(--p)}.ni svg{width:20px;height:20px;margin-bottom:2px}.ni span{font-weight:500}
+.card{background:#fff;border-radius:var(--rl);box-shadow:var(--s);margin-bottom:12px;overflow:hidden}.ch{padding:12px 16px;font-size:13px;font-weight:600;border-bottom:1px solid var(--g100);color:var(--p);display:flex;align-items:center;gap:8px}.cb{padding:14px 16px}
+.fg{margin-bottom:13px}.fl{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:500;color:var(--g600);margin-bottom:4px}.rd{width:5px;height:5px;background:var(--er);border-radius:50%}
+.fc{width:100%;padding:10px 12px;border:1.5px solid var(--g200);border-radius:var(--r);font-size:14px;color:#1a1a2e;background:#fff;transition:border-color .2s;-webkit-appearance:none}.fc:focus{outline:none;border-color:var(--pl);box-shadow:0 0 0 3px rgba(3,105,161,.1)}select.fc{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}textarea.fc{resize:vertical;min-height:56px}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:10px}.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border-radius:var(--r);font-size:14px;font-weight:500;border:none;cursor:pointer;transition:all .15s;width:100%}.bp{background:var(--p);color:#fff}.bp:hover{background:var(--pl)}.bp:disabled{background:var(--g300)}.bs{background:var(--ok);color:#fff}.bo{background:#fff;color:var(--p);border:1.5px solid var(--g200)}.bo:hover{border-color:var(--p)}.bd{background:var(--er);color:#fff}.bx{padding:4px 10px;font-size:11px;border-radius:6px}
+.chip{display:inline-flex;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}.co{background:#fef3c7;color:#92400e}.cc{background:var(--okb);color:var(--ok)}.cp{background:var(--peb);color:var(--pe)}.ca{background:var(--okb);color:var(--ok)}.cd{background:var(--g100);color:var(--g500)}.cgd{background:var(--erb);color:#991b1b}
+.ev{background:#fff;border-radius:var(--r);border:1px solid var(--g200);padding:12px;margin-bottom:8px}
+.login{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:linear-gradient(160deg,#0c4a6e,#075985,#0369a1)}.lcard{background:#fff;border-radius:var(--rl);padding:24px;width:100%;max-width:400px;margin-top:24px;box-shadow:0 4px 12px rgba(0,0,0,.1)}.lerr{color:var(--er);font-size:12px;margin-top:8px;text-align:center}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:150;display:flex;align-items:flex-end;justify-content:center}.msheet{background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:640px;max-height:85vh;overflow-y:auto;padding:20px 16px;animation:sUp .3s ease}@keyframes sUp{from{transform:translateY(100%)}to{transform:translateY(0)}}.mhd{width:36px;height:4px;background:var(--g300);border-radius:2px;margin:0 auto 16px}
+.tog{position:relative;width:44px;height:24px;border-radius:12px;background:var(--g300);cursor:pointer;transition:background .2s;flex-shrink:0}.tog.on{background:var(--ok)}.tog::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:var(--s)}.tog.on::after{transform:translateX(20px)}
+.gate{text-align:center;padding:40px 20px}.gate p{font-size:13px;color:var(--g500);margin-bottom:16px}.gate .fc{max-width:280px;margin:0 auto;text-align:center}
+.empty{text-align:center;padding:40px 20px;color:var(--g400)}.empty p{font-size:13px}
+.toast{position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-20px);background:#1a1a2e;color:#fff;padding:10px 20px;border-radius:var(--r);font-size:13px;font-weight:500;opacity:0;transition:all .3s;z-index:200;pointer-events:none;max-width:90vw}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}.toast.te{background:var(--er)}
+.lov{position:fixed;inset:0;background:rgba(255,255,255,.8);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:150;gap:12px}.spin{width:28px;height:28px;border:3px solid var(--g200);border-top-color:var(--p);border-radius:50%;animation:sp .6s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}.lovt{font-size:13px;color:var(--g500)}
+.ai{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--g100)}.ai:last-child{border-bottom:none}.ai-n{font-size:13px;font-weight:500}.ai-s{font-size:11px;color:var(--g400)}.ai-act{display:flex;gap:4px}
+.sl{font-size:11px;font-weight:600;color:var(--g400);text-transform:uppercase;letter-spacing:.5px;padding:12px 4px 6px}
+.ae-item{background:var(--g50);border:1px solid var(--g200);border-radius:var(--r);padding:10px;margin-bottom:6px}.ae-hd{display:flex;justify-content:space-between;align-items:center}.ae-nm{font-size:13px;font-weight:500}.ae-rm{font-size:18px;color:var(--er);cursor:pointer;border:none;background:none;padding:0 4px}.ae-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}.ae-row .fc{padding:7px 10px;font-size:12px}
+.ce-item{background:var(--g50);border:1px solid var(--g200);border-radius:var(--r);padding:10px;margin-bottom:6px}
+.mt8{margin-top:8px}.mt12{margin-top:12px}.mb8{margin-bottom:8px}
+.pill-row{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}.pill{padding:2px 8px;border-radius:var(--r);font-size:10px;font-weight:500;background:var(--pb);color:var(--p);cursor:pointer;border:1px solid transparent}.pill.on{border-color:var(--p);background:var(--p);color:#fff}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const SB_URL='https://sverhycdussadqcoztiv.supabase.co',SB_KEY='sb_publishable_xnSJH6SYvEAoJMht7Nu54g_EadsxYL2';
+const db=window.supabase.createClient(SB_URL,SB_KEY);
+const SLDC_PW='sldc@master2026';
+
+// ═══ STATE ═══
+const S={screen:'login',tab:'submit',loading:false,toast:{msg:'',err:false,show:false},
+nodals:[],selectedNodal:null,pw:'',loginErr:'',loginMode:'operator',
+eventTypes:[],causeCategories:[],fieldDefs:[],etFields:{},utilities:[],
+stations:[],elements:{},events:[],form:mkF(),
+adminUnlocked:false,sldcUnlocked:false,
+modal:null,md:{},restoreEvt:null,restoreForm:{event_time_end:'',restoration_remarks:'',corrective_action:''},
+sldcEvents:[],sldcFilter:{nodal_id:'',event_type_id:'',status:'',date_from:'',date_to:'',is_grid_disturbance:''},sldcView:'config',
+sldcRefreshTimer:null,sldcSoundOn:true,sldcLastCount:0,sldcNewCount:0,
+sldcReportShift:'',sldcReportExcluded:{}};
+function mkF(){return{station_id:'',event_type_id:'',cause_category_id:'',substation:'',voltage_level:'',load_mw:'',gen_mw:'',line_name:'',equipment_name:'',reason:'',area_affected:'',event_time_start:'',event_time_end:'',is_ongoing:false,is_grid_disturbance:false,dynamic_fields:{},affected_elements:[],curtailment_entries:[],remarks:'',corrective_action:''}}
+
+// ═══ HELPERS ═══
+const $=s=>document.querySelector(s);
+const $$=s=>document.querySelectorAll(s);
+function toast(m,e=false){S.toast={msg:m,err:e,show:true};render();setTimeout(()=>{S.toast.show=false;render()},2500)}
+function setL(v){S.loading=v;render()}
+function now(){return new Date().toISOString()}
+function fT(iso){if(!iso)return'';try{return new Date(iso).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}catch{return''}}
+function fD(iso){if(!iso)return'';try{return new Date(iso).toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'})}catch{return''}}
+function fDT(iso){if(!iso)return'';try{return new Date(iso).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}catch{return''}}
+function l2i(v){return v?new Date(v).toISOString():null}
+function i2l(iso){if(!iso)return'';const d=new Date(iso),o=d.getTimezoneOffset();return new Date(d.getTime()-o*60000).toISOString().slice(0,16)}
+function esc(s){return(s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;')}
+function curShift(){const h=new Date().getHours(),m=new Date().getMinutes();if(h<9||(h===9&&m<30))return'07:00';if(h<21)return'09:00';return'21:00'}
+function shiftLabel(s){return s==='07:00'?'Night (07:00)':s==='09:00'?'Morning (09:00)':'Evening (21:00)'}
+function genReportMsg(evts){
+let msg='*MSETCL SLDC Airoli*\n*Event Report - '+new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})+'*\n';
+msg+='*Shift: '+shiftLabel(S.sldcReportShift||curShift())+'*\n\n';
+if(!evts.length){msg+='No reportable events.\n';return msg}
+let idx=1;
+evts.forEach(ev=>{
+msg+=idx+') *'+ev.event_type_name+'*\n';
+msg+='Station: '+ev.station_name+' ('+ev.nodal_centre_name+')\n';
+if(ev.substation)msg+='Substation: '+ev.substation+'\n';
+if(ev.line_name)msg+='Line: '+ev.line_name+'\n';
+if(ev.equipment_name)msg+='Equipment: '+ev.equipment_name+'\n';
+msg+='Time: '+fDT(ev.event_time_start)+(ev.event_time_end?' to '+fT(ev.event_time_end):'')+(ev.is_ongoing?' (ongoing)':'')+'\n';
+if(ev.load_mw)msg+='Load affected: '+ev.load_mw+' MW\n';
+if(ev.gen_mw)msg+='Gen affected: '+ev.gen_mw+' MW\n';
+if(ev.reason)msg+='Reason: '+ev.reason+'\n';
+if(ev.corrective_action)msg+='Action: '+ev.corrective_action+'\n';
+if(ev.is_grid_disturbance)msg+='*[Grid Disturbance]*\n';
+msg+='\n';idx++});
+msg+='Total events: '+evts.length+'\n';
+const tlm=evts.reduce((s,e)=>s+(parseFloat(e.load_mw)||0),0);
+const tgm=evts.reduce((s,e)=>s+(parseFloat(e.gen_mw)||0),0);
+if(tlm)msg+='Total load affected: '+tlm.toFixed(2)+' MW\n';
+if(tgm)msg+='Total gen affected: '+tgm.toFixed(2)+' MW\n';
+return msg}
+
+// ═══ DB OPERATIONS ═══
+async function loadCfg(){
+const[nc,et,cc,fd,etf,ut]=await Promise.all([
+db.from('nodal_centres').select('*').eq('active',true).order('name'),
+db.from('event_types').select('*').eq('active',true).order('display_order'),
+db.from('cause_categories').select('*').eq('active',true).order('display_order'),
+db.from('field_definitions').select('*').eq('active',true).order('display_order'),
+db.from('event_type_fields').select('*').order('display_order'),
+db.from('utility_companies').select('*').eq('active',true).order('name')]);
+S.nodals=nc.data||[];S.eventTypes=et.data||[];S.causeCategories=cc.data||[];S.fieldDefs=fd.data||[];S.utilities=ut.data||[];
+const a=etf.data||[];S.etFields={};
+S.eventTypes.forEach(e=>{const ls=a.filter(l=>l.event_type_id===e.id);
+S.etFields[e.id]=ls.map(l=>{const f=S.fieldDefs.find(x=>x.id===l.field_id);if(!f)return null;
+return{field_id:l.field_id,etf_id:l.id,code:f.code,label:f.label,type:f.field_type,config:f.config||{},required:l.is_required,order:l.display_order,description:f.description}}).filter(Boolean).sort((a,b)=>a.order-b.order)})}
+
+async function loadSt(nid){const{data}=await db.from('stations').select('*').eq('nodal_centre_id',nid).eq('active',true).order('name');S.stations=data||[]}
+async function loadAllEl(){const ids=S.stations.map(s=>s.id);if(!ids.length)return;const{data}=await db.from('station_elements').select('*').in('station_id',ids).eq('active',true).order('name');S.elements={};(data||[]).forEach(el=>{if(!S.elements[el.station_id])S.elements[el.station_id]=[];S.elements[el.station_id].push(el)})}
+async function loadEl(sid){const{data}=await db.from('station_elements').select('*').eq('station_id',sid).eq('active',true).order('name');S.elements[sid]=data||[]}
+async function loadEv(nid){const d=new Date();d.setDate(d.getDate()-7);const{data}=await db.from('station_events').select('*').eq('nodal_centre_id',nid).gte('event_time_start',d.toISOString()).order('event_time_start',{ascending:false});S.events=data||[]}
+
+async function loadSldcEvents(){
+const f=S.sldcFilter;let q=db.from('station_events').select('*');
+const d=new Date();d.setDate(d.getDate()-7);
+if(f.date_from)q=q.gte('event_time_start',new Date(f.date_from).toISOString());
+else q=q.gte('event_time_start',d.toISOString());
+if(f.date_to)q=q.lte('event_time_start',new Date(f.date_to+'T23:59:59').toISOString());
+if(f.nodal_id)q=q.eq('nodal_centre_id',parseInt(f.nodal_id));
+if(f.event_type_id)q=q.eq('event_type_id',parseInt(f.event_type_id));
+if(f.status==='open')q=q.eq('event_status','open');
+else if(f.status==='closed')q=q.eq('event_status','closed');
+else if(f.status==='pending')q=q.eq('sldc_status','pending');
+else if(f.status==='accepted')q=q.eq('sldc_status','accepted');
+if(f.is_grid_disturbance==='yes')q=q.eq('is_grid_disturbance',true);
+q=q.order('event_time_start',{ascending:false}).limit(200);
+const{data}=await q;S.sldcEvents=data||[]}
+
+// ═══ CRUD OPERATIONS ═══
+async function upsertStation(d){
+if(d.id){const{error}=await db.from('stations').update({name:d.name,voltage_level:d.voltage_level,licensee:d.licensee,bus_configuration:d.bus_configuration}).eq('id',d.id);if(error)throw error}
+else{const{error}=await db.from('stations').insert([{nodal_centre_id:S.selectedNodal.id,name:d.name,voltage_level:d.voltage_level,licensee:d.licensee,bus_configuration:d.bus_configuration}]);if(error)throw error}
+await loadSt(S.selectedNodal.id)}
+
+async function softDeleteStation(id){const{error}=await db.from('stations').update({active:false}).eq('id',id);if(error)throw error;await loadSt(S.selectedNodal.id)}
+
+async function upsertElement(d){
+if(d.id){const{error}=await db.from('station_elements').update({name:d.name,element_type:d.element_type,voltage_level:d.voltage_level,details:d.details,terminal_station_1:d.terminal_station_1,terminal_station_2:d.terminal_station_2,terminal_station_3:d.terminal_station_3,equipment_subtype:d.equipment_subtype}).eq('id',d.id);if(error)throw error}
+else{const{error}=await db.from('station_elements').insert([{station_id:d.station_id,name:d.name,element_type:d.element_type,voltage_level:d.voltage_level,details:d.details,terminal_station_1:d.terminal_station_1,terminal_station_2:d.terminal_station_2,terminal_station_3:d.terminal_station_3,equipment_subtype:d.equipment_subtype}]);if(error)throw error}
+await loadAllEl()}
+
+async function softDeleteElement(id){const{error}=await db.from('station_elements').update({active:false}).eq('id',id);if(error)throw error;await loadAllEl()}
+
+async function upsertEventType(d){
+if(d.id){const{error}=await db.from('event_types').update({code:d.code,name:d.name,description:d.description,impact_categories:d.impact_categories,display_order:d.display_order}).eq('id',d.id);if(error)throw error}
+else{const{data,error}=await db.from('event_types').insert([{code:d.code,name:d.name,description:d.description,impact_categories:d.impact_categories,display_order:d.display_order||99}]).select();if(error)throw error;d.id=data[0].id}
+// Update field mappings - delete existing, re-insert
+if(d.field_mappings){
+await db.from('event_type_fields').delete().eq('event_type_id',d.id);
+if(d.field_mappings.length){const rows=d.field_mappings.map(fm=>({event_type_id:d.id,field_id:fm.field_id,is_required:fm.is_required,display_order:fm.display_order||99}));
+const{error:e2}=await db.from('event_type_fields').insert(rows);if(e2)throw e2}}
+await loadCfg()}
+
+async function softDeleteEventType(id){const{error}=await db.from('event_types').update({active:false}).eq('id',id);if(error)throw error;await loadCfg()}
+
+async function upsertFieldDef(d){
+const config={};
+if(d.field_type==='SELECT'&&d.options)config.options=d.options;
+if(d.field_type==='NUMBER'){config.min=d.min??0;config.step=d.step??1}
+if(d.id){const{error}=await db.from('field_definitions').update({label:d.label,field_type:d.field_type,config,description:d.description||null,display_order:d.display_order||99}).eq('id',d.id);if(error)throw error}
+else{const{error}=await db.from('field_definitions').insert([{code:d.code,label:d.label,field_type:d.field_type,config,description:d.description||null,display_order:d.display_order||99}]);if(error)throw error}
+await loadCfg()}
+
+async function softDeleteFieldDef(id){const{error}=await db.from('field_definitions').update({active:false}).eq('id',id);if(error)throw error;await loadCfg()}
+
+async function upsertCauseCat(d){
+if(d.id){const{error}=await db.from('cause_categories').update({name:d.name,description:d.description,display_order:d.display_order}).eq('id',d.id);if(error)throw error}
+else{const{error}=await db.from('cause_categories').insert([{name:d.name,description:d.description,display_order:d.display_order||99}]);if(error)throw error}
+await loadCfg()}
+
+async function softDeleteCauseCat(id){const{error}=await db.from('cause_categories').update({active:false}).eq('id',id);if(error)throw error;await loadCfg()}
+
+async function upsertUtility(d){
+if(d.id){const{error}=await db.from('utility_companies').update({name:d.name,short_code:d.short_code,utility_type:d.utility_type}).eq('id',d.id);if(error)throw error}
+else{const{error}=await db.from('utility_companies').insert([{name:d.name,short_code:d.short_code,utility_type:d.utility_type}]);if(error)throw error}
+await loadCfg()}
+
+async function softDeleteUtility(id){const{error}=await db.from('utility_companies').update({active:false}).eq('id',id);if(error)throw error;await loadCfg()}
+
+async function upsertNodal(d){
+if(d.id){const{error}=await db.from('nodal_centres').update({name:d.name,short_code:d.short_code,admin_password:d.admin_password,operator_password:d.operator_password,contact_name:d.contact_name,contact_phone:d.contact_phone}).eq('id',d.id);if(error)throw error}
+else{const{error}=await db.from('nodal_centres').insert([d]);if(error)throw error}
+await loadCfg()}
+
+async function softDeleteNodal(id){const{error}=await db.from('nodal_centres').update({active:false}).eq('id',id);if(error)throw error;await loadCfg();toast('Nodal deactivated. Historical events still reference it.')}
+
+async function submitEvent(f){
+const st=S.stations.find(s=>s.id==f.station_id),et=S.eventTypes.find(e=>e.id==f.event_type_id),cc=S.causeCategories.find(c=>c.id==f.cause_category_id);
+if(!st||!et)throw new Error('Missing station or event type');
+const n=now();
+const p={submission_id:crypto.randomUUID?.()??(''+Date.now()),
+nodal_centre_id:S.selectedNodal.id,nodal_centre_name:S.selectedNodal.name,
+station_id:parseInt(f.station_id),station_name:st.name,
+event_type_id:et.id,event_type_code:et.code,event_type_name:et.name,
+cause_category_id:cc?.id||null,cause_category_name:cc?.name||null,
+substation:f.substation||null,voltage_level:f.voltage_level||null,
+load_mw:f.load_mw?parseFloat(f.load_mw):null,gen_mw:f.gen_mw?parseFloat(f.gen_mw):null,
+line_name:f.line_name||null,equipment_name:f.equipment_name||null,
+reason:f.reason||null,area_affected:f.area_affected||null,
+dynamic_fields:f.dynamic_fields||{},affected_elements:f.affected_elements||[],
+event_time_start:l2i(f.event_time_start),event_time_end:f.is_ongoing?null:l2i(f.event_time_end),
+is_ongoing:f.is_ongoing,is_grid_disturbance:f.is_grid_disturbance||false,
+reporting_time:n,event_status:f.is_ongoing?'open':(f.event_time_end?'closed':'open'),
+remarks:f.remarks||null,corrective_action:f.corrective_action||null,
+initiated_by:f.dynamic_fields.initiated_by||null,
+instructed_curtailment_mw:f.dynamic_fields.instructed_curtailment?parseFloat(f.dynamic_fields.instructed_curtailment):null,
+actual_curtailment_mw:f.dynamic_fields.actual_curtailment?parseFloat(f.dynamic_fields.actual_curtailment):null,
+curtailment_entries:f.curtailment_entries||[]};
+const{error}=await db.from('station_events').insert([p]);if(error)throw error}
+
+async function updateRestore(id,f){
+const n=now();
+const{error}=await db.from('station_events').update({event_time_end:l2i(f.event_time_end),is_ongoing:false,event_status:'closed',restored_at:l2i(f.event_time_end),restoration_reporting_time:n,restoration_db_receipt_time:n,restoration_remarks:f.restoration_remarks||null,corrective_action:f.corrective_action||null}).eq('id',id);
+if(error)throw error}
+
+async function sldcConcur(evId,reason){
+const{error}=await db.from('station_events').update({concurred_by_sldc:true,sldc_concurrence_time:now(),sldc_detailed_reason:reason}).eq('id',evId);
+if(error)throw error}
+
+async function sldcAccept(evId){
+const{error}=await db.from('station_events').update({sldc_status:'accepted',sldc_reviewed_at:now()}).eq('id',evId);
+if(error)throw error}
+
+async function sldcDismiss(evId,remarks){
+const{error}=await db.from('station_events').update({sldc_status:'dismissed',sldc_reviewed_at:now(),sldc_remarks:remarks||null}).eq('id',evId);
+if(error)throw error}
+
+// ═══ LOGIN ═══
+async function doLogin(){
+if(S.loginMode==='sldc_admin'){
+if(!S.pw){S.loginErr='Enter SLDC password';render();return}
+if(S.pw!==SLDC_PW){S.loginErr='Incorrect SLDC password';render();return}
+S.sldcUnlocked=true;S.adminUnlocked=true;setL(true);
+try{await loadCfg();if(S.nodals.length){S.selectedNodal=S.nodals[0];await loadSt(S.selectedNodal.id);await loadAllEl();await loadEv(S.selectedNodal.id)}
+await loadSldcEvents();
+S.screen='main';S.tab='sldc';S.loginErr=''}catch(e){S.loginErr='Connection error';console.error(e)}setL(false);return}
+if(!S.selectedNodal){S.loginErr='Select a nodal centre';render();return}
+if(!S.pw){S.loginErr='Enter password';render();return}
+const nc=S.selectedNodal;
+if(S.loginMode==='operator'&&S.pw!==nc.operator_password){S.loginErr='Incorrect password';render();return}
+if(S.loginMode==='nodal_admin'&&S.pw!==nc.admin_password){S.loginErr='Incorrect password';render();return}
+if(S.loginMode==='nodal_admin')S.adminUnlocked=true;
+setL(true);try{await loadSt(nc.id);await loadAllEl();await loadEv(nc.id);S.screen='main';S.tab=S.loginMode==='nodal_admin'?'stations':'submit';S.loginErr=''}catch(e){S.loginErr='Connection error';console.error(e)}setL(false)}
+
+function doLogout(){Object.assign(S,{screen:'login',selectedNodal:null,pw:'',loginMode:'operator',adminUnlocked:false,sldcUnlocked:false,form:mkF(),stations:[],events:[],elements:{}});render()}
+
+// ═══ SUBMIT ═══
+async function doSubmit(){
+const f=S.form,errs=[];
+if(!f.station_id)errs.push('Station');if(!f.event_type_id)errs.push('Event type');if(!f.event_time_start)errs.push('Event time start');if(!f.reason)errs.push('Reason/cause');
+(S.etFields[f.event_type_id]||[]).forEach(fd=>{if(!fd.required)return;const c=fd.code;
+if(['substation','voltage_level','load_mw','gen_mw','line_name','equipment_name','area_affected','corrective_action'].includes(c)){if(!f[c])errs.push(fd.label)}
+else if(c!=='remarks'&&c!=='affected_elements'&&c!=='curtailment_entries'){if(!f.dynamic_fields[c])errs.push(fd.label)}});
+if(errs.length){toast('Required: '+errs.join(', '),true);return}
+setL(true);try{await submitEvent(f);const sid=f.station_id;S.form=mkF();S.form.station_id=sid;await loadEv(S.selectedNodal.id);toast('Event submitted')}catch(e){toast(e.message||'Error',true);console.error(e)}setL(false)}
+
+async function doRestore(){
+const f=S.restoreForm;if(!f.event_time_end){toast('Enter restoration time',true);return}
+setL(true);try{await updateRestore(S.restoreEvt.id,f);await loadEv(S.selectedNodal.id);S.modal=null;toast('Restoration updated')}catch(e){toast(e.message||'Error',true)}setL(false)}
+
+function doDup(ev){
+S.form=mkF();S.form.station_id=String(ev.station_id);S.form.substation=ev.substation||'';S.form.voltage_level=ev.voltage_level||'';S.form.line_name=ev.line_name||'';S.form.equipment_name=ev.equipment_name||'';S.form.area_affected=ev.area_affected||'';S.form.reason=ev.reason||'';S.tab='submit';toast('Form pre-filled');render()}
+
+// ═══ RENDER ═══
+function render(){
+const app=document.getElementById('app');
+let ov=document.getElementById('lov');
+if(S.loading){if(!ov){ov=document.createElement('div');ov.id='lov';ov.className='lov';ov.innerHTML='<div class="spin"></div><div class="lovt">Loading...</div>';document.body.appendChild(ov)}}
+else if(ov)ov.remove();
+app.innerHTML=S.screen==='login'?rLogin():rMain();
+let t=document.getElementById('gt');if(!t){t=document.createElement('div');t.id='gt';t.className='toast';document.body.appendChild(t)}
+t.textContent=S.toast.msg;t.className='toast'+(S.toast.err?' te':'')+(S.toast.show?' show':'');
+bind()}
+
+// ── LOGIN ──
+function rLogin(){
+const opts=S.nodals.map(n=>'<option value="'+n.id+'" '+(S.selectedNodal?.id===n.id?'selected':'')+'>'+esc(n.name)+'</option>').join('');
+const m=S.loginMode;
+const pwL={operator:'Operator Password',nodal_admin:'Nodal Admin Password',sldc_admin:'SLDC Master Password'};
+let h='<div class="login"><div style="width:72px;height:72px;border-radius:18px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;margin-bottom:16px;font-size:28px;font-weight:700;color:#fbbf24">\u26A1</div>';
+h+='<div style="color:#fff;font-size:18px;font-weight:600;text-align:center">MSETCL SLDC Airoli</div>';
+h+='<div style="color:rgba(255,255,255,.6);font-size:13px;margin-top:4px;text-align:center">Situational Alert Messaging System</div>';
+h+='<div class="lcard"><div style="text-align:center;margin-bottom:16px"><div style="display:inline-flex;gap:3px;background:var(--g100);border-radius:var(--r);padding:3px">';
+['operator','nodal_admin','sldc_admin'].forEach(k=>{
+const lbl={operator:'Operator',nodal_admin:'Nodal Admin',sldc_admin:'SLDC Admin'}[k];
+h+='<button class="bx '+(m===k?'bp':'')+'" data-lm="'+k+'" style="border:none;'+(m===k?'':'background:transparent;color:var(--g500)')+'">'+lbl+'</button>'});
+h+='</div></div>';
+if(m!=='sldc_admin')h+='<div class="fg"><div class="fl">Nodal Centre</div><select class="fc" id="l-nodal"><option value="">\u2014 Select \u2014</option>'+opts+'</select></div>';
+h+='<div class="fg"><div class="fl">'+pwL[m]+'</div><input class="fc" type="password" id="l-pw" placeholder="Enter password" value="'+esc(S.pw)+'"></div>';
+if(S.loginErr)h+='<div class="lerr">'+S.loginErr+'</div>';
+h+='<button class="btn bp mt8" id="bl">Sign In</button></div></div>';
+return h}
+
+// ── MAIN ──
+function rMain(){
+let c='';
+if(S.tab==='submit')c=rSubmit();else if(S.tab==='history')c=rHistory();else if(S.tab==='stations')c=rStations();else if(S.tab==='sldc')c=rSldc();
+let ml='';if(S.modal)ml=rModal();
+return'<div class="bar"><div class="bar-r"><div><div class="bar-t">SAMS \u2014 Station Reporting</div>'+(S.selectedNodal?'<div class="bar-n">'+esc(S.selectedNodal.name)+'</div>':'')+'</div><button class="bx" id="blo" style="background:rgba(255,255,255,.15);color:#fff;border:none">Logout</button></div></div><div class="cnt">'+c+'</div>'+rNav()+ml}
+
+// ── SUBMIT TAB ──
+function rSubmit(){
+const f=S.form;
+const stO=S.stations.map(s=>'<option value="'+s.id+'" '+(f.station_id==s.id?'selected':'')+'>'+esc(s.name)+'</option>').join('');
+const etO=S.eventTypes.map(e=>'<option value="'+e.id+'" '+(f.event_type_id==e.id?'selected':'')+'>'+esc(e.name)+'</option>').join('');
+const ccO=S.causeCategories.map(c=>'<option value="'+c.id+'" '+(f.cause_category_id==c.id?'selected':'')+'>'+esc(c.name)+'</option>').join('');
+const flds=S.etFields[f.event_type_id]||[];
+const has=c=>flds.some(x=>x.code===c);
+const req=c=>{const x=flds.find(x=>x.code===c);return x?.required};
+
+// Dynamic fields (non-core)
+let dyn='';
+flds.forEach(fd=>{
+if(['substation','voltage_level','load_mw','gen_mw','line_name','equipment_name','area_affected','corrective_action','affected_elements','remarks','curtailment_entries'].includes(fd.code))return;
+const val=f.dynamic_fields[fd.code]||'';const rq=fd.required?'<span class="rd"></span>':'';
+if(fd.type==='SELECT'){const os=(fd.config?.options||[]).map(o=>'<option '+(val===o?'selected':'')+'>'+esc(o)+'</option>').join('');
+dyn+='<div class="fg"><div class="fl">'+rq+' '+esc(fd.label)+'</div><select class="fc" data-dyn="'+fd.code+'"><option value="">\u2014</option>'+os+'</select></div>'}
+else if(fd.type==='TEXTAREA')dyn+='<div class="fg"><div class="fl">'+rq+' '+esc(fd.label)+'</div><textarea class="fc" data-dyn="'+fd.code+'" placeholder="'+esc(fd.description||'')+'">'+esc(val)+'</textarea></div>';
+else if(fd.type==='NUMBER')dyn+='<div class="fg"><div class="fl">'+rq+' '+esc(fd.label)+'</div><input class="fc" type="number" data-dyn="'+fd.code+'" value="'+val+'" step="'+(fd.config?.step||1)+'" placeholder="'+esc(fd.description||'')+'"></div>';
+else dyn+='<div class="fg"><div class="fl">'+rq+' '+esc(fd.label)+'</div><input class="fc" data-dyn="'+fd.code+'" value="'+esc(val)+'" placeholder="'+esc(fd.description||'')+'"></div>'});
+
+// Curtailment entries (for DLS/ELR/GenCurt)
+let curtHtml='';
+if(has('curtailment_entries')){
+const entries=f.curtailment_entries||[];
+const rows=entries.map((ce,i)=>'<div class="ce-item"><div class="ae-hd"><span class="ae-nm">'+esc(ce.substation)+'</span><button class="ae-rm" data-rce="'+i+'">\u00D7</button></div><div class="fr3 mt8"><div><div class="fl" style="font-size:10px">Instructed MW</div><input class="fc" style="padding:6px 8px;font-size:12px" type="number" step="0.01" data-ce-instr="'+i+'" value="'+(ce.instructed_mw||'')+'"></div><div><div class="fl" style="font-size:10px">Actual MW</div><input class="fc" style="padding:6px 8px;font-size:12px" type="number" step="0.01" data-ce-actual="'+i+'" value="'+(ce.actual_mw||'')+'"></div><div><div class="fl" style="font-size:10px">Feeder</div><input class="fc" style="padding:6px 8px;font-size:12px" data-ce-fdr="'+i+'" value="'+esc(ce.feeder||'')+'"></div></div></div>').join('');
+curtHtml='<div class="fg"><div class="fl">Curtailment Breakdown (per substation)</div>'+rows+'<div class="fr mt8"><input class="fc" id="ce-sub" placeholder="Substation name"><button class="btn bo bx" id="b-add-ce">+ Add</button></div></div>'}
+
+// Affected elements
+let aeHtml='';
+if(has('affected_elements')){
+const els=f.affected_elements||[];
+const stId=f.station_id;const stEls=stId?S.elements[stId]||[]:[];
+const elOpts=stEls.map(e=>'<option value="'+e.id+'">'+esc(e.name)+' ('+e.element_type+')</option>').join('');
+const rows=els.map((ae,i)=>'<div class="ae-item"><div class="ae-hd"><span class="ae-nm">'+esc(ae.name)+(ae.is_free_text?' (custom)':'')+'</span><button class="ae-rm" data-rae="'+i+'">\u00D7</button></div><div class="ae-row"><div><div class="fl" style="font-size:10px">Status</div><select class="fc" data-ae-st="'+i+'"><option '+(ae.status==='Restored'?'selected':'')+'>Restored</option><option '+(ae.status==='Breakdown'?'selected':'')+'>Breakdown</option><option '+(ae.status==='Outage'?'selected':'')+'>Outage</option><option '+(ae.status==='Patrolling'?'selected':'')+'>Patrolling</option><option '+(ae.status==='TBC'?'selected':'')+'>TBC</option></select></div><div><div class="fl" style="font-size:10px">Time</div><input class="fc" type="time" data-ae-tm="'+i+'" value="'+(ae.time||'')+'"></div></div><div class="ae-row"><div><div class="fl" style="font-size:10px">Load MW</div><input class="fc" type="number" step="0.01" data-ae-lm="'+i+'" value="'+(ae.load_mw||'')+'"></div><div><div class="fl" style="font-size:10px">Gen MW</div><input class="fc" type="number" step="0.01" data-ae-gm="'+i+'" value="'+(ae.gen_mw||'')+'"></div></div></div>').join('');
+aeHtml='<div class="fg"><div class="fl">Affected Elements</div>'+rows+'<div class="fr mt8"><select class="fc" id="ae-sel"><option value="">\u2014 Select \u2014</option>'+elOpts+'<option value="__free">Other (free text)</option></select><button class="btn bo bx" id="b-add-ae">+ Add</button></div><div id="ae-fw" style="display:none;margin-top:6px"><input class="fc" id="ae-fn" placeholder="Element name"></div></div>'}
+
+let h='<div class="card"><div class="ch">Report Event</div><div class="cb">';
+h+='<div class="fg"><div class="fl"><span class="rd"></span> Station</div><select class="fc" id="f-st"><option value="">\u2014 Select \u2014</option>'+stO+'</select></div>';
+h+='<div class="fg"><div class="fl"><span class="rd"></span> Event Type</div><select class="fc" id="f-et"><option value="">\u2014 Select \u2014</option>'+etO+'</select></div>';
+h+='<div class="fg"><div class="fl">Cause Category</div><select class="fc" id="f-cc"><option value="">\u2014 Optional \u2014</option>'+ccO+'</select></div>';
+if(has('substation'))h+='<div class="fg"><div class="fl">'+(req('substation')?'<span class="rd"></span>':'')+' Substation / Feeder</div><input class="fc" id="f-sub" value="'+esc(f.substation)+'"></div>';
+h+='<div class="fr">';
+if(has('voltage_level'))h+='<div class="fg"><div class="fl">'+(req('voltage_level')?'<span class="rd"></span>':'')+' Voltage</div><select class="fc" id="f-volt"><option value="">\u2014</option>'+['132kV','220kV','400kV','100kV','33kV','22kV'].map(v=>'<option '+(f.voltage_level===v?'selected':'')+'>'+v+'</option>').join('')+'</select></div>';
+if(has('load_mw'))h+='<div class="fg"><div class="fl">'+(req('load_mw')?'<span class="rd"></span>':'')+' Load MW</div><input class="fc" type="number" step="0.01" id="f-lm" value="'+f.load_mw+'"></div>';
+h+='</div>';
+if(has('gen_mw'))h+='<div class="fg"><div class="fl">'+(req('gen_mw')?'<span class="rd"></span>':'')+' Gen MW</div><input class="fc" type="number" step="0.01" id="f-gm" value="'+f.gen_mw+'"></div>';
+if(has('line_name'))h+='<div class="fg"><div class="fl">'+(req('line_name')?'<span class="rd"></span>':'')+' Line Name</div><input class="fc" id="f-ln" value="'+esc(f.line_name)+'"></div>';
+if(has('equipment_name'))h+='<div class="fg"><div class="fl">'+(req('equipment_name')?'<span class="rd"></span>':'')+' Equipment</div><input class="fc" id="f-eq" value="'+esc(f.equipment_name)+'"></div>';
+h+=dyn;
+h+='<div class="fr"><div class="fg"><div class="fl"><span class="rd"></span> Event Time Start</div><input class="fc" type="datetime-local" id="f-ts" value="'+f.event_time_start+'"></div><div class="fg"><div class="fl">Event Time End</div><input class="fc" type="datetime-local" id="f-te" value="'+f.event_time_end+'" '+(f.is_ongoing?'disabled':'')+"></div></div>";
+h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:13px"><div class="tog '+(f.is_ongoing?'on':'')+'" id="f-ong"></div><span style="font-size:12px;color:var(--g600)">Ongoing</span></div>';
+h+='<div class="fg"><div class="fl"><span class="rd"></span> Reason / Cause</div><textarea class="fc" id="f-rsn" placeholder="Detailed reason">'+esc(f.reason)+'</textarea></div>';
+if(has('area_affected'))h+='<div class="fg"><div class="fl">Area Affected</div><input class="fc" id="f-area" value="'+esc(f.area_affected)+'"></div>';
+if(has('corrective_action'))h+='<div class="fg"><div class="fl">Corrective Action</div><textarea class="fc" id="f-ca">'+esc(f.corrective_action)+'</textarea></div>';
+h+=curtHtml+aeHtml;
+if(has('remarks'))h+='<div class="fg"><div class="fl">Remarks</div><textarea class="fc" id="f-rem">'+esc(f.remarks)+'</textarea></div>';
+h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:13px;padding:10px;background:var(--erb);border-radius:var(--r)"><div class="tog '+(f.is_grid_disturbance?'on':'')+'" id="f-gd"></div><span style="font-size:12px;font-weight:500;color:var(--g700)">\u26A0 Part of Grid Disturbance</span></div>';
+h+='<button class="btn bp" id="b-submit">Submit Event</button></div></div>';
+return h}
+
+// ── HISTORY ──
+function rHistory(){
+if(!S.events.length)return'<div class="card"><div class="ch">Event History (7 days)</div><div class="empty"><p>No events</p></div></div>';
+const g={};S.events.forEach(ev=>{const d=(ev.event_time_start||'').slice(0,10)||'?';if(!g[d])g[d]=[];g[d].push(ev)});
+let h='<div class="card"><div class="ch">Event History (7 days)</div></div>';
+Object.keys(g).sort().reverse().forEach(date=>{const evts=g[date];
+h+='<div class="sl">'+fD(date+'T00:00:00')+' \u2014 '+evts.length+' event'+(evts.length>1?'s':'')+'</div>';
+evts.forEach(ev=>{
+const sc=ev.event_status==='open'?'co':'cc';const slc=ev.sldc_status==='accepted'?'ca':ev.sldc_status==='dismissed'?'cd':'cp';
+h+='<div class="ev"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><div>';
+h+='<div style="font-size:14px;font-weight:700;color:var(--p);margin-bottom:2px">'+esc(ev.event_type_name)+'</div>';
+h+='<div style="font-size:13px;font-weight:600;color:var(--g700)">'+esc(ev.station_name)+'</div>';
+h+='<div style="font-size:11px;color:var(--g400)">'+(ev.substation||ev.line_name||ev.equipment_name||'')+'</div>';
+h+='</div><div style="display:flex;gap:4px;flex-wrap:wrap"><span class="chip '+sc+'">'+ev.event_status+'</span><span class="chip '+slc+'">'+ev.sldc_status+'</span>';
+if(ev.is_grid_disturbance)h+='<span class="chip cgd">\u26A0 GD</span>';
+if(ev.concurred_by_sldc)h+='<span class="chip ca">\u2713 Concurred</span>';
+h+='</div></div>';
+h+='<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px"><span style="font-size:11px;color:var(--g500)">'+fDT(ev.event_time_start)+(ev.event_time_end?' \u2192 '+fT(ev.event_time_end):'')+(ev.is_ongoing?' (ongoing)':'')+'</span>';
+if(ev.load_mw)h+='<span style="font-size:11px;font-weight:600;color:var(--a)">'+ev.load_mw+' MW</span>';
+if(ev.gen_mw)h+='<span style="font-size:11px;font-weight:600;color:var(--ok)">'+ev.gen_mw+' MW gen</span>';
+h+='</div>';
+if(ev.cause_category_name)h+='<div style="font-size:11px;color:var(--g400);margin-top:2px">'+esc(ev.cause_category_name)+'</div>';
+if(ev.reason)h+='<div style="font-size:12px;color:var(--g600);line-height:1.5;margin-top:4px">'+esc(ev.reason)+'</div>';
+if(ev.corrective_action)h+='<div style="font-size:12px;color:var(--ok);margin-top:2px">\u2692 '+esc(ev.corrective_action)+'</div>';
+if(ev.sldc_detailed_reason)h+='<div style="font-size:12px;color:var(--p);margin-top:2px;font-style:italic">SLDC: '+esc(ev.sldc_detailed_reason)+'</div>';
+h+='<div style="display:flex;gap:6px;margin-top:8px">';
+if(ev.event_status==='open')h+='<button class="bx bs" data-restore="'+ev.id+'">+ Restore</button>';
+h+='<button class="bx bo" data-dup="'+ev.id+'">\u2398 Duplicate</button>';
+if(S.sldcUnlocked&&!ev.concurred_by_sldc&&['DLS','ELR','GEN_CURT_RE','GEN_CURT_NRE'].includes(ev.event_type_code))h+='<button class="bx bp" data-concur="'+ev.id+'">Concur</button>';
+h+='</div></div>'})});
+return h}
+
+// ── STATIONS TAB ──
+function rStations(){
+if(!S.adminUnlocked)return'<div class="card"><div class="ch">Manage Stations</div><div class="gate"><p>Nodal Admin password required</p><input class="fc" type="password" id="g-na"><button class="btn bp mt8" id="b-una" style="max-width:280px;margin:8px auto 0">Unlock</button></div></div>';
+let h='<div class="card"><div class="ch" style="justify-content:space-between">Stations ('+S.stations.length+')<button class="bx bo" id="b-add-st" style="width:auto">+ Add</button></div>';
+S.stations.forEach(s=>{
+const els=S.elements[s.id]||[];
+h+='<div class="ai" style="flex-direction:column;align-items:stretch"><div style="display:flex;justify-content:space-between;align-items:center"><div><div class="ai-n">'+esc(s.name)+'</div><div class="ai-s">'+[s.voltage_level,s.licensee,s.bus_configuration].filter(Boolean).join(' \u00B7 ')+'</div></div><div class="ai-act"><button class="bx bo" data-edit-st="'+s.id+'">Edit</button><button class="bx bd" data-del-st="'+s.id+'" style="color:var(--er);background:transparent;border:1px solid var(--er)">\u00D7</button><button class="bx bo" data-add-el="'+s.id+'" style="width:auto">+ Elem</button></div></div>';
+els.forEach(el=>{h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0 3px 12px;border-top:1px solid var(--g100)"><div style="font-size:12px">'+esc(el.name)+' <span style="color:var(--g400)">'+el.element_type+(el.terminal_station_1?' ('+esc(el.terminal_station_1)+'\u2013'+esc(el.terminal_station_2||'')+')':(el.equipment_subtype?' / '+el.equipment_subtype:''))+'</span></div><div class="ai-act"><button class="bx bo" data-edit-el="'+el.id+'" style="font-size:10px">Edit</button><button class="bx" data-del-el="'+el.id+'" style="font-size:10px;color:var(--er);background:transparent;border:none">\u00D7</button></div></div>'});
+h+='</div>'});
+if(!S.stations.length)h+='<div class="empty"><p>No stations</p></div>';
+return h+'</div>'}
+
+// ── SLDC TAB ──
+function rSldc(){
+if(!S.sldcUnlocked)return'<div class="card"><div class="ch">SLDC Admin</div><div class="gate"><p>SLDC master password required</p><input class="fc" type="password" id="g-sldc"><button class="btn bp mt8" id="b-uns" style="max-width:280px;margin:8px auto 0">Unlock</button></div></div>';
+
+// View toggle: Config vs Events
+let h='<div style="display:flex;gap:4px;margin-bottom:12px;background:var(--g100);border-radius:var(--r);padding:3px;display:inline-flex">';
+h+='<button class="bx '+(S.sldcView==='events'?'bp':'')+'" data-sv="events" style="border:none;'+(S.sldcView==='events'?'':'background:transparent;color:var(--g500)')+'">Events Dashboard</button>';
+h+='<button class="bx '+(S.sldcView==='config'?'bp':'')+'" data-sv="config" style="border:none;'+(S.sldcView==='config'?'':'background:transparent;color:var(--g500)')+'">Configuration</button></div>';
+
+if(S.sldcView==='events')return h+rSldcEvents();
+return h+rSldcConfig()}
+
+function rSldcEvents(){
+const evts=S.sldcEvents;
+const total=evts.length;
+const open=evts.filter(e=>e.event_status==='open').length;
+const pending=evts.filter(e=>e.sldc_status==='pending').length;
+const gd=evts.filter(e=>e.is_grid_disturbance).length;
+const tlm=evts.reduce((s,e)=>s+(parseFloat(e.load_mw)||0),0);
+const tgm=evts.reduce((s,e)=>s+(parseFloat(e.gen_mw)||0),0);
+const nodalsReporting=[...new Set(evts.map(e=>e.nodal_centre_id))].length;
+let h='';
+
+// Zone A: Alert bar
+if(S.sldcNewCount>0){
+h+='<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--rl);margin-bottom:12px;background:var(--erb);border:1px solid #F09595">';
+h+='<div style="width:10px;height:10px;border-radius:50%;background:#E24B4A;animation:pulse 1.5s infinite"></div>';
+h+='<span style="font-size:12px;font-weight:500;color:#791F1F">'+S.sldcNewCount+' new event'+(S.sldcNewCount>1?'s':'')+' since last check</span>';
+h+='<span style="margin-left:auto;display:flex;gap:4px">';
+h+='<button class="bx" id="b-snd-tog" style="background:'+(!S.sldcSoundOn?'var(--erb)':'#fff')+';color:'+(S.sldcSoundOn?'var(--ok)':'#991b1b')+';border:1px solid var(--g200)">'+(S.sldcSoundOn?'Sound ON':'Sound OFF')+'</button>';
+h+='</span></div>'}
+h+='<style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}</style>';
+
+// Zone B: Summary cards
+h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px">';
+h+='<div style="background:#E6F1FB;border-radius:var(--rl);padding:10px;text-align:center"><div style="font-size:20px;font-weight:500;color:#0C447C">'+total+'</div><div style="font-size:10px;color:#185FA5">Total</div></div>';
+h+='<div style="background:#FAEEDA;border-radius:var(--rl);padding:10px;text-align:center"><div style="font-size:20px;font-weight:500;color:#633806">'+open+'</div><div style="font-size:10px;color:#854F0B">Open</div></div>';
+h+='<div style="background:#EEEDFE;border-radius:var(--rl);padding:10px;text-align:center"><div style="font-size:20px;font-weight:500;color:#3C3489">'+pending+'</div><div style="font-size:10px;color:#534AB7">Pending</div></div>';
+h+='<div style="background:#FCEBEB;border-radius:var(--rl);padding:10px;text-align:center"><div style="font-size:20px;font-weight:500;color:#791F1F">'+gd+'</div><div style="font-size:10px;color:#A32D2D">Grid Dist</div></div></div>';
+h+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px">';
+h+='<div style="background:#FAEEDA;border-radius:var(--rl);padding:10px;text-align:center"><div style="font-size:18px;font-weight:500;color:#633806">'+tlm.toFixed(1)+'</div><div style="font-size:10px;color:#854F0B">Load MW</div></div>';
+h+='<div style="background:#EAF3DE;border-radius:var(--rl);padding:10px;text-align:center"><div style="font-size:18px;font-weight:500;color:#27500A">'+tgm.toFixed(1)+'</div><div style="font-size:10px;color:#3B6D11">Gen MW</div></div>';
+h+='<div style="background:#E1F5EE;border-radius:var(--rl);padding:10px;text-align:center"><div style="font-size:18px;font-weight:500;color:#085041">'+nodalsReporting+'</div><div style="font-size:10px;color:#0F6E56">Nodals</div></div></div>';
+
+// Zone C: Filters + Timeline
+const f=S.sldcFilter;
+const ncO=S.nodals.map(n=>'<option value="'+n.id+'" '+(f.nodal_id==n.id?'selected':'')+'>'+esc(n.name)+'</option>').join('');
+const etO=S.eventTypes.map(e=>'<option value="'+e.id+'" '+(f.event_type_id==e.id?'selected':'')+'>'+esc(e.name)+'</option>').join('');
+h+='<div class="card"><div class="ch" style="justify-content:space-between"><span>Filters</span><span style="font-size:10px;color:var(--g400)">Auto-refresh: 60s</span></div><div class="cb">';
+h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">';
+h+='<div class="fg"><div class="fl" style="font-size:10px">Nodal</div><select class="fc" id="sf-nc" style="padding:7px 10px;font-size:12px"><option value="">All</option>'+ncO+'</select></div>';
+h+='<div class="fg"><div class="fl" style="font-size:10px">Type</div><select class="fc" id="sf-et" style="padding:7px 10px;font-size:12px"><option value="">All</option>'+etO+'</select></div>';
+h+='<div class="fg"><div class="fl" style="font-size:10px">Status</div><select class="fc" id="sf-st" style="padding:7px 10px;font-size:12px"><option value="">All</option><option '+(f.status==='open'?'selected':'')+' value="open">Open</option><option '+(f.status==='closed'?'selected':'')+' value="closed">Closed</option><option '+(f.status==='pending'?'selected':'')+' value="pending">Pending</option><option '+(f.status==='accepted'?'selected':'')+' value="accepted">Accepted</option></select></div></div>';
+h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">';
+h+='<div class="fg"><div class="fl" style="font-size:10px">From</div><input class="fc" type="date" id="sf-df" value="'+f.date_from+'" style="padding:7px 10px;font-size:12px"></div>';
+h+='<div class="fg"><div class="fl" style="font-size:10px">To</div><input class="fc" type="date" id="sf-dt" value="'+f.date_to+'" style="padding:7px 10px;font-size:12px"></div>';
+h+='<div class="fg"><div class="fl" style="font-size:10px">GD only</div><select class="fc" id="sf-gd" style="padding:7px 10px;font-size:12px"><option value="">All</option><option '+(f.is_grid_disturbance==='yes'?'selected':'')+' value="yes">Yes</option></select></div></div>';
+h+='<button class="btn bp" id="b-sf-apply" style="padding:8px">Apply</button></div></div>';
+
+// Timeline
+if(!evts.length){h+='<div class="empty"><p>No events match filters</p></div>'}
+else{
+// Group by shift period
+const shifts={};evts.forEach(ev=>{const sp=ev.shift_period||'unknown';if(!shifts[sp])shifts[sp]=[];shifts[sp].push(ev)});
+const shiftOrder=['21:00','09:00','07:00'];
+shiftOrder.forEach(sp=>{
+const sevts=shifts[sp];if(!sevts)return;
+h+='<div style="font-size:11px;font-weight:600;color:var(--g400);margin:12px 0 4px;text-transform:uppercase;letter-spacing:.5px">'+shiftLabel(sp)+' \u2014 '+sevts.length+' events</div>';
+h+='<div style="position:relative;padding-left:20px;margin:8px 0">';
+h+='<div style="position:absolute;left:6px;top:0;bottom:0;width:2px;background:var(--g200)"></div>';
+sevts.forEach(ev=>{
+const dotClr=ev.is_grid_disturbance?'#E24B4A':ev.event_status==='open'?'#BA7517':'#639922';
+h+='<div style="position:relative;padding:10px 12px;margin-bottom:6px;border-radius:var(--r);background:#fff;border:0.5px solid var(--g200)">';
+h+='<div style="position:absolute;left:-17px;top:14px;width:8px;height:8px;border-radius:50%;background:'+dotClr+';border:2px solid #fff;box-shadow:0 0 0 1px '+dotClr+'"></div>';
+h+='<div style="display:flex;justify-content:space-between;align-items:flex-start"><div>';
+h+='<div style="font-size:13px;font-weight:600;color:var(--p)">'+esc(ev.event_type_name)+'</div>';
+h+='<div style="font-size:12px;color:var(--g700)">'+esc(ev.station_name)+' <span style="color:var(--g400)">\u00B7 '+esc(ev.nodal_centre_name)+'</span></div>';
+h+='<div style="font-size:11px;color:var(--g400)">'+(ev.substation||ev.line_name||ev.equipment_name||'')+'</div>';
+h+='</div><div style="display:flex;gap:3px;flex-wrap:wrap">';
+const sc=ev.event_status==='open'?'co':'cc';const slc=ev.sldc_status==='accepted'?'ca':ev.sldc_status==='dismissed'?'cd':'cp';
+h+='<span class="chip '+sc+'">'+ev.event_status+'</span><span class="chip '+slc+'">'+ev.sldc_status+'</span>';
+if(ev.is_grid_disturbance)h+='<span class="chip cgd">GD</span>';
+if(ev.concurred_by_sldc)h+='<span class="chip ca">Concurred</span>';
+h+='</div></div>';
+h+='<div style="font-size:11px;color:var(--g500);margin-top:4px">'+fDT(ev.event_time_start)+(ev.event_time_end?' \u2192 '+fT(ev.event_time_end):'')+(ev.is_ongoing?' (ongoing)':'');
+if(ev.load_mw)h+=' \u00B7 <b style="color:var(--a)">'+ev.load_mw+' MW</b>';
+if(ev.gen_mw)h+=' \u00B7 <b style="color:var(--ok)">'+ev.gen_mw+' MW gen</b>';
+h+='</div>';
+if(ev.reason)h+='<div style="font-size:12px;color:var(--g600);margin-top:3px">'+esc(ev.reason)+'</div>';
+if(ev.event_time_start&&ev.reporting_time){const delay=Math.round((new Date(ev.reporting_time)-new Date(ev.event_time_start))/60000);
+if(delay>0)h+='<div style="font-size:10px;color:var(--g400);margin-top:2px">Reported '+delay+' min after event</div>'}
+h+='<div style="display:flex;gap:4px;margin-top:6px">';
+if(ev.sldc_status==='pending'){h+='<button class="bx bs" data-accept="'+ev.id+'" style="font-size:10px">Accept</button>';
+h+='<button class="bx" data-dismiss="'+ev.id+'" style="font-size:10px;color:var(--er);background:transparent;border:1px solid var(--er)">Dismiss</button>'}
+if(!ev.concurred_by_sldc&&['DLS','ELR','GEN_CURT_RE','GEN_CURT_NRE'].includes(ev.event_type_code))h+='<button class="bx bp" data-concur="'+ev.id+'" style="font-size:10px">Concur</button>';
+h+='</div></div>'});
+h+='</div>'});
+// Events without shift period
+const noShift=evts.filter(e=>!shiftOrder.includes(e.shift_period));
+if(noShift.length){h+='<div class="sl">Other ('+noShift.length+')</div>';
+noShift.forEach(ev=>{h+='<div class="ev">'+esc(ev.event_type_name)+' - '+esc(ev.station_name)+'</div>'})}
+}
+
+// Zone D: Report Compilation
+const rShift=S.sldcReportShift||curShift();
+const reportEvts=evts.filter(e=>e.sldc_status==='accepted'&&e.shift_period===rShift);
+const includedEvts=reportEvts.filter(e=>!S.sldcReportExcluded[e.id]);
+h+='<div class="card mt12"><div class="ch" style="background:var(--p);color:#fff;border:none">Compile Shift Report</div><div class="cb">';
+h+='<div style="display:flex;gap:4px;margin-bottom:12px">';
+['07:00','09:00','21:00'].forEach(sp=>{h+='<button class="bx '+(rShift===sp?'bp':'bo')+'" data-rshift="'+sp+'" style="flex:1;font-size:11px">'+shiftLabel(sp)+'</button>'});
+h+='</div>';
+if(!reportEvts.length){h+='<div style="font-size:12px;color:var(--g400);text-align:center;padding:20px">No accepted events for this shift. Accept events from the timeline above first.</div>'}
+else{
+h+='<div style="font-size:12px;font-weight:500;color:var(--g500);margin-bottom:8px">Accepted events ('+reportEvts.length+') \u2014 uncheck to exclude:</div>';
+reportEvts.forEach(ev=>{
+const excluded=!!S.sldcReportExcluded[ev.id];
+h+='<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--g100);'+(excluded?'opacity:0.4':'')+'">';
+h+='<input type="checkbox" data-rpt-cb="'+ev.id+'" '+(excluded?'':'checked')+' style="width:15px;height:15px;flex-shrink:0">';
+h+='<div style="flex:1;font-size:12px"><b>'+esc(ev.event_type_name)+'</b> \u2014 '+esc(ev.station_name);
+if(ev.load_mw)h+=' \u2014 '+ev.load_mw+' MW';
+h+=' \u2014 '+fT(ev.event_time_start)+(ev.event_time_end?' to '+fT(ev.event_time_end):'');
+h+='</div></div>'});
+h+='<div style="display:flex;gap:8px;margin-top:12px">';
+h+='<button class="btn bp" id="b-gen-msg" style="flex:1">Generate Message</button>';
+h+='<button class="btn bo" id="b-copy-msg" style="flex:1">Copy to Clipboard</button></div>';
+}
+h+='</div></div>';
+return h}
+
+function rSldcConfig(){
+let h='';
+// Nodal Centres
+h+='<div class="card"><div class="ch" style="justify-content:space-between">Nodal Centres ('+S.nodals.length+')<button class="bx bo" id="b-add-nc" style="width:auto">+ Add</button></div>';
+S.nodals.forEach(nc=>{h+='<div class="ai"><div><div class="ai-n">'+esc(nc.name)+'</div><div class="ai-s">'+esc(nc.short_code)+' \u00B7 '+(nc.contact_name||'')+'</div></div><div class="ai-act"><button class="bx bo" data-edit-nc="'+nc.id+'">Edit</button><button class="bx" data-del-nc="'+nc.id+'" style="color:var(--er);background:transparent;border:none">\u00D7</button></div></div>'});
+h+='</div>';
+// Event Types
+h+='<div class="card"><div class="ch" style="justify-content:space-between">Event Types ('+S.eventTypes.length+')<button class="bx bo" id="b-add-et" style="width:auto">+ Add</button></div>';
+S.eventTypes.forEach(et=>{const flds=S.etFields[et.id]||[];
+h+='<div class="ai" style="flex-direction:column;align-items:stretch"><div style="display:flex;justify-content:space-between;align-items:center"><div><div class="ai-n">'+esc(et.code)+' \u2014 '+esc(et.name)+'</div><div class="ai-s">'+(et.impact_categories||[]).join(', ')+'</div><div class="ai-s">Fields: '+flds.map(f=>(f.required?'\u2022':'  ')+f.label).join(', ')+'</div></div><div class="ai-act"><button class="bx bo" data-edit-et="'+et.id+'">Edit</button><button class="bx" data-del-et="'+et.id+'" style="color:var(--er);background:transparent;border:none">\u00D7</button></div></div></div>'});
+h+='</div>';
+// Cause Categories
+h+='<div class="card"><div class="ch" style="justify-content:space-between">Cause Categories ('+S.causeCategories.length+')<button class="bx bo" id="b-add-cc" style="width:auto">+ Add</button></div>';
+S.causeCategories.forEach(c=>{h+='<div class="ai"><div><div class="ai-n">'+esc(c.name)+'</div><div class="ai-s">'+(c.description||'')+'</div></div><div class="ai-act"><button class="bx bo" data-edit-cc="'+c.id+'">Edit</button><button class="bx" data-del-cc="'+c.id+'" style="color:var(--er);background:transparent;border:none">\u00D7</button></div></div>'});
+h+='</div>';
+// Utilities
+h+='<div class="card"><div class="ch" style="justify-content:space-between">Utilities ('+S.utilities.length+')<button class="bx bo" id="b-add-ut" style="width:auto">+ Add</button></div>';
+S.utilities.forEach(u=>{h+='<div class="ai"><div><div class="ai-n">'+esc(u.name)+'</div><div class="ai-s">'+esc(u.short_code)+' \u00B7 '+u.utility_type+'</div></div><div class="ai-act"><button class="bx bo" data-edit-ut="'+u.id+'">Edit</button><button class="bx" data-del-ut="'+u.id+'" style="color:var(--er);background:transparent;border:none">\u00D7</button></div></div>'});
+h+='</div>';
+// Field Definitions (Master Pool)
+h+='<div class="card"><div class="ch" style="justify-content:space-between">Field Definitions \u2014 Master Pool ('+S.fieldDefs.length+')<button class="bx bo" id="b-add-fd" style="width:auto">+ New Field</button></div>';
+S.fieldDefs.forEach(fd=>{
+const optCount=(fd.config?.options||[]).length;
+const typeInfo=fd.field_type+(fd.field_type==='SELECT'?' ('+optCount+' opts)':'');
+h+='<div class="ai"><div><div class="ai-n">'+esc(fd.label)+'</div><div class="ai-s">'+esc(fd.code)+' \u00B7 '+typeInfo+(fd.description?' \u00B7 '+esc(fd.description):'')+'</div></div><div class="ai-act"><button class="bx bo" data-edit-fd="'+fd.id+'">Edit</button><button class="bx" data-del-fd="'+fd.id+'" style="color:var(--er);background:transparent;border:none">\u00D7</button></div></div>'});
+return h+'</div>'}
+
+// ── NAV ──
+function rNav(){
+const ts=[{id:'submit',l:'Report',i:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15h6"/>'},{id:'history',l:'History',i:'<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>'},{id:'stations',l:'Stations',i:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>'},{id:'sldc',l:'SLDC',i:'<path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>'}];
+return'<div class="bnav">'+ts.map(t=>'<button class="ni '+(S.tab===t.id?'on':'')+'" data-tab="'+t.id+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'+t.i+'</svg><span>'+t.l+'</span></button>').join('')+'</div>'}
+
+// ── MODALS ──
+function rModal(){
+const d=S.md;
+let h='<div class="modal" id="mbg"><div class="msheet"><div class="mhd"></div>';
+if(S.modal==='restore'){const ev=S.restoreEvt;if(!ev)return'';const rf=S.restoreForm;
+h+='<div style="font-size:15px;font-weight:600;margin-bottom:4px">Restoration</div><div style="font-size:12px;color:var(--g500);margin-bottom:16px">'+esc(ev.event_type_name)+' at '+esc(ev.station_name)+'</div>';
+h+='<div class="fg"><div class="fl"><span class="rd"></span> Restoration Time</div><input class="fc" type="datetime-local" id="r-te" value="'+rf.event_time_end+'"></div>';
+h+='<div class="fg"><div class="fl">Corrective Action</div><textarea class="fc" id="r-ca">'+esc(rf.corrective_action)+'</textarea></div>';
+h+='<div class="fg"><div class="fl">Remarks</div><textarea class="fc" id="r-rm">'+esc(rf.restoration_remarks)+'</textarea></div>';
+h+='<div style="display:flex;gap:10px"><button class="btn bs" id="b-do-rest">Save</button><button class="btn bo" id="b-cancel">Cancel</button></div>'}
+
+else if(S.modal==='station'){
+h+='<div style="font-size:15px;font-weight:600;margin-bottom:16px">'+(d.id?'Edit':'Add')+' Station</div>';
+h+='<div class="fg"><div class="fl"><span class="rd"></span> Name</div><input class="fc" id="m-sn" value="'+esc(d.name||'')+'"></div>';
+const utOpts=S.utilities.map(u=>'<option value="'+esc(u.name)+'" '+(d.licensee===u.name?'selected':'')+'>'+esc(u.name)+'</option>').join('');
+h+='<div class="fr"><div class="fg"><div class="fl">Voltage</div><select class="fc" id="m-sv"><option value="">\u2014</option>'+['132kV','220kV','400kV'].map(v=>'<option '+(d.voltage_level===v?'selected':'')+'>'+v+'</option>').join('')+'</select></div>';
+h+='<div class="fg"><div class="fl">Licensee</div><select class="fc" id="m-sl"><option value="">\u2014</option>'+utOpts+'</select></div></div>';
+h+='<div class="fg"><div class="fl">Bus Configuration</div><select class="fc" id="m-sbc"><option value="">\u2014</option>'+['Single Bus','Double Bus','One-and-half Breaker','Ring Bus','Double Bus Double Breaker','Main and Transfer'].map(v=>'<option '+(d.bus_configuration===v?'selected':'')+'>'+v+'</option>').join('')+'</select></div>';
+h+='<div style="display:flex;gap:10px"><button class="btn bp" id="b-do-st">Save</button><button class="btn bo" id="b-cancel">Cancel</button></div>'}
+
+else if(S.modal==='element'){
+h+='<div style="font-size:15px;font-weight:600;margin-bottom:16px">'+(d.id?'Edit':'Add')+' Element</div>';
+h+='<div class="fg"><div class="fl"><span class="rd"></span> Name</div><input class="fc" id="m-en" value="'+esc(d.name||'')+'"></div>';
+h+='<div class="fr"><div class="fg"><div class="fl"><span class="rd"></span> Type</div><select class="fc" id="m-ety"><option value="">\u2014</option>'+['LINE','ICT','TRANSFORMER','REACTOR','CAPACITOR','CT','PT','CVT','GENERATOR','FEEDER','BUSBAR','BUS_SECTION','OTHER'].map(v=>'<option '+(d.element_type===v?'selected':'')+'>'+v+'</option>').join('')+'</select></div>';
+h+='<div class="fg"><div class="fl">Voltage</div><select class="fc" id="m-evl"><option value="">\u2014</option>'+['132kV','220kV','400kV','100kV','33kV','22kV'].map(v=>'<option '+(d.voltage_level===v?'selected':'')+'>'+v+'</option>').join('')+'</select></div></div>';
+h+='<div class="fg"><div class="fl">Details</div><input class="fc" id="m-edt" value="'+esc(d.details||'')+'" placeholder="e.g. 200MVA"></div>';
+h+='<div class="fr"><div class="fg"><div class="fl">Terminal Station 1</div><input class="fc" id="m-et1" value="'+esc(d.terminal_station_1||'')+'" placeholder="For lines only"></div>';
+h+='<div class="fg"><div class="fl">Terminal Station 2</div><input class="fc" id="m-et2" value="'+esc(d.terminal_station_2||'')+'"></div></div>';
+h+='<div style="display:flex;gap:10px"><button class="btn bp" id="b-do-el">Save</button><button class="btn bo" id="b-cancel">Cancel</button></div>'}
+
+else if(S.modal==='nodal'){
+h+='<div style="font-size:15px;font-weight:600;margin-bottom:16px">'+(d.id?'Edit':'Add')+' Nodal Centre</div>';
+h+='<div class="fg"><div class="fl"><span class="rd"></span> Name</div><input class="fc" id="m-nn" value="'+esc(d.name||'')+'"></div>';
+h+='<div class="fr"><div class="fg"><div class="fl"><span class="rd"></span> Code</div><input class="fc" id="m-ncd" value="'+esc(d.short_code||'')+'"></div><div class="fg"><div class="fl">Contact</div><input class="fc" id="m-ncn" value="'+esc(d.contact_name||'')+'"></div></div>';
+h+='<div class="fr"><div class="fg"><div class="fl"><span class="rd"></span> Admin PW</div><input class="fc" id="m-nap" value="'+esc(d.admin_password||'')+'"></div><div class="fg"><div class="fl"><span class="rd"></span> Operator PW</div><input class="fc" id="m-nop" value="'+esc(d.operator_password||'')+'"></div></div>';
+h+='<div style="display:flex;gap:10px"><button class="btn bp" id="b-do-nc">Save</button><button class="btn bo" id="b-cancel">Cancel</button></div>'}
+
+else if(S.modal==='eventtype'){
+h+='<div style="font-size:15px;font-weight:600;margin-bottom:16px">'+(d.id?'Edit':'Add')+' Event Type</div>';
+h+='<div class="fr"><div class="fg"><div class="fl"><span class="rd"></span> Code</div><input class="fc" id="m-etc" value="'+esc(d.code||'')+'"></div><div class="fg"><div class="fl"><span class="rd"></span> Name</div><input class="fc" id="m-etn" value="'+esc(d.name||'')+'"></div></div>';
+h+='<div class="fg"><div class="fl">Description</div><input class="fc" id="m-etd" value="'+esc(d.description||'')+'"></div>';
+const cats=['LOAD_AND_GEN','ONLY_LOAD','ONLY_GEN','NO_IMPACT'];
+const selCats=d.impact_categories||[];
+h+='<div class="fg"><div class="fl">Impact Categories</div><div class="pill-row">'+cats.map(c=>'<span class="pill '+(selCats.includes(c)?'on':'')+'" data-cat="'+c+'">'+c+'</span>').join('')+'</div></div>';
+// Enhanced field mappings with display_order
+const mappings=d.field_mappings||[];
+h+='<div class="fg"><div class="fl" style="justify-content:space-between;width:100%"><span>Fields Configuration</span><span style="font-size:10px;color:var(--g400)">Check = include, Req = required, # = form order</span></div>';
+h+='<div style="border:1px solid var(--g200);border-radius:var(--r);overflow:hidden">';
+h+='<div style="display:grid;grid-template-columns:28px 1fr 40px 50px;gap:0;padding:6px 8px;background:var(--g100);font-size:10px;font-weight:600;color:var(--g500)"><span></span><span>Field</span><span>Req</span><span>Order</span></div>';
+// Sort: checked fields first (by display_order), unchecked after
+const sortedFds=[...S.fieldDefs].sort((a,b)=>{
+const ma=mappings.find(m=>m.field_id===a.id);const mb=mappings.find(m=>m.field_id===b.id);
+if(ma&&!mb)return -1;if(!ma&&mb)return 1;
+if(ma&&mb)return(ma.display_order||99)-(mb.display_order||99);
+return(a.display_order||99)-(b.display_order||99)});
+sortedFds.forEach(fd=>{
+const mapped=mappings.find(m=>m.field_id===fd.id);
+const isChecked=!!mapped;
+const ord=mapped?.display_order||'';
+const rowBg=isChecked?'background:var(--pb);':'opacity:0.6;';
+h+='<div style="display:grid;grid-template-columns:28px 1fr 40px 50px;gap:0;padding:5px 8px;border-top:1px solid var(--g100);align-items:center;'+rowBg+'">';
+h+='<input type="checkbox" data-fm="'+fd.id+'" '+(isChecked?'checked':'')+' style="width:15px;height:15px">';
+h+='<div style="font-size:12px">'+esc(fd.label)+'<span style="font-size:10px;color:var(--g400);margin-left:4px">'+fd.field_type+'</span></div>';
+if(isChecked){
+h+='<input type="checkbox" data-fmr="'+fd.id+'" '+(mapped?.is_required?'checked':'')+' style="width:14px;height:14px">';
+h+='<input type="number" data-fmo="'+fd.id+'" value="'+ord+'" style="width:44px;padding:3px 6px;font-size:12px;border:1px solid var(--g200);border-radius:4px;text-align:center" min="1" step="1">';
+}else{
+h+='<span></span><span></span>';
+}
+h+='</div>'});
+h+='</div></div>';
+h+='<div style="display:flex;gap:10px;margin-top:12px"><button class="btn bp" id="b-do-et">Save</button><button class="btn bo" id="b-cancel">Cancel</button></div>'}
+
+else if(S.modal==='fieldmaster'){
+h+='<div style="font-size:15px;font-weight:600;margin-bottom:16px">'+(d.id?'Edit':'Add New')+' Field Definition</div>';
+h+='<div class="fr"><div class="fg"><div class="fl"><span class="rd"></span> Code</div><input class="fc" id="m-fdc" value="'+esc(d.code||'')+'" placeholder="e.g. relay_make" '+(d.id?'disabled':'')+'></div>';
+h+='<div class="fg"><div class="fl"><span class="rd"></span> Label</div><input class="fc" id="m-fdl" value="'+esc(d.label||'')+'" placeholder="e.g. Relay Make/Model"></div></div>';
+h+='<div class="fr"><div class="fg"><div class="fl"><span class="rd"></span> Type</div><select class="fc" id="m-fdt"><option '+(d.field_type==='TEXT'?'selected':'')+'>TEXT</option><option '+(d.field_type==='NUMBER'?'selected':'')+'>NUMBER</option><option '+(d.field_type==='SELECT'?'selected':'')+'>SELECT</option><option '+(d.field_type==='TEXTAREA'?'selected':'')+'>TEXTAREA</option><option '+(d.field_type==='TOGGLE'?'selected':'')+'>TOGGLE</option></select></div>';
+h+='<div class="fg"><div class="fl">Display Order</div><input class="fc" type="number" id="m-fdo" value="'+(d.display_order||99)+'" min="1"></div></div>';
+h+='<div class="fg"><div class="fl">Help Text</div><input class="fc" id="m-fdh" value="'+esc(d.description||'')+'" placeholder="Shown to operator as hint"></div>';
+// Config for SELECT type - options
+const opts=(d.config?.options||[]).join('\n');
+h+='<div class="fg" id="fd-opts-wrap"><div class="fl">Dropdown Options (one per line, for SELECT type only)</div><textarea class="fc" id="m-fdopts" rows="4" placeholder="Option 1\nOption 2\nOption 3">'+esc(opts)+'</textarea></div>';
+// Config for NUMBER type
+h+='<div class="fg" id="fd-num-wrap"><div class="fl">Number Config</div><div class="fr"><div class="fg"><div class="fl" style="font-size:10px">Min</div><input class="fc" type="number" id="m-fdmin" value="'+(d.config?.min??0)+'" style="padding:6px 8px;font-size:12px"></div><div class="fg"><div class="fl" style="font-size:10px">Step</div><input class="fc" type="number" id="m-fdstep" value="'+(d.config?.step??1)+'" style="padding:6px 8px;font-size:12px"></div></div></div>';
+h+='<div style="display:flex;gap:10px;margin-top:8px"><button class="btn bp" id="b-do-fd">Save Field</button><button class="btn bo" id="b-cancel">Cancel</button></div>'}
+
+else if(S.modal==='cause'){
+h+='<div style="font-size:15px;font-weight:600;margin-bottom:16px">'+(d.id?'Edit':'Add')+' Cause Category</div>';
+h+='<div class="fg"><div class="fl"><span class="rd"></span> Name</div><input class="fc" id="m-ccn" value="'+esc(d.name||'')+'"></div>';
+h+='<div class="fg"><div class="fl">Description</div><input class="fc" id="m-ccd" value="'+esc(d.description||'')+'"></div>';
+h+='<div style="display:flex;gap:10px"><button class="btn bp" id="b-do-cc">Save</button><button class="btn bo" id="b-cancel">Cancel</button></div>'}
+
+else if(S.modal==='utility'){
+h+='<div style="font-size:15px;font-weight:600;margin-bottom:16px">'+(d.id?'Edit':'Add')+' Utility</div>';
+h+='<div class="fg"><div class="fl"><span class="rd"></span> Name</div><input class="fc" id="m-utn" value="'+esc(d.name||'')+'"></div>';
+h+='<div class="fr"><div class="fg"><div class="fl"><span class="rd"></span> Code</div><input class="fc" id="m-utc" value="'+esc(d.short_code||'')+'"></div><div class="fg"><div class="fl">Type</div><select class="fc" id="m-utt"><option '+(d.utility_type==='TRANSMISSION'?'selected':'')+'>TRANSMISSION</option><option '+(d.utility_type==='DISTRIBUTION'?'selected':'')+'>DISTRIBUTION</option><option '+(d.utility_type==='GENERATION'?'selected':'')+'>GENERATION</option></select></div></div>';
+h+='<div style="display:flex;gap:10px"><button class="btn bp" id="b-do-ut">Save</button><button class="btn bo" id="b-cancel">Cancel</button></div>'}
+
+else if(S.modal==='concur'){
+h+='<div style="font-size:15px;font-weight:600;margin-bottom:16px">SLDC Concurrence</div>';
+h+='<div class="fg"><div class="fl">Detailed Reason (SLDC)</div><textarea class="fc" id="m-cr" placeholder="Enter the detailed reason known to SLDC"></textarea></div>';
+h+='<div style="display:flex;gap:10px"><button class="btn bs" id="b-do-concur">Concur</button><button class="btn bo" id="b-cancel">Cancel</button></div>'}
+
+else if(S.modal==='reportpreview'){
+const msg=S.md.generatedMsg||'';
+h+='<div style="font-size:15px;font-weight:600;margin-bottom:16px">Generated Report Message</div>';
+h+='<div style="font-size:11px;color:var(--g400);margin-bottom:8px">Review and copy to WhatsApp/Telegram</div>';
+h+='<textarea class="fc" id="m-rpt-msg" rows="18" style="font-family:monospace;font-size:12px;line-height:1.6;white-space:pre-wrap">'+esc(msg)+'</textarea>';
+h+='<div style="display:flex;gap:10px;margin-top:10px"><button class="btn bp" id="b-copy-rpt">Copy to Clipboard</button><button class="btn bo" id="b-cancel">Close</button></div>'}
+
+return h+'</div></div>'}
+
+// ═══ BIND ═══
+function bind(){
+// Login
+$$('[data-lm]').forEach(b=>b.onclick=function(){S.loginMode=this.dataset.lm;S.pw='';S.loginErr='';render()});
+const ln=$('#l-nodal');if(ln)ln.onchange=function(){S.selectedNodal=S.nodals.find(n=>n.id===parseInt(this.value))||null;S.loginErr=''};
+const lp=$('#l-pw');if(lp){lp.oninput=function(){S.pw=this.value;S.loginErr=''};lp.onkeydown=function(e){if(e.key==='Enter')doLogin()}}
+const bl=$('#bl');if(bl)bl.onclick=doLogin;
+const blo=$('#blo');if(blo)blo.onclick=doLogout;
+
+// Nav
+$$('[data-tab]').forEach(b=>b.onclick=async function(){S.tab=this.dataset.tab;if(S.tab==='history'){setL(true);await loadEv(S.selectedNodal.id);setL(false)}render()});
+
+// Form
+const fst=$('#f-st');if(fst)fst.onchange=async function(){S.form.station_id=this.value;if(this.value)await loadEl(parseInt(this.value));render()};
+const fet=$('#f-et');if(fet)fet.onchange=function(){S.form.event_type_id=this.value;S.form.dynamic_fields={};S.form.curtailment_entries=[];render()};
+const fcc=$('#f-cc');if(fcc)fcc.onchange=function(){S.form.cause_category_id=this.value};
+const fsub=$('#f-sub');if(fsub)fsub.oninput=function(){S.form.substation=this.value};
+const fv=$('#f-volt');if(fv)fv.onchange=function(){S.form.voltage_level=this.value};
+const flm=$('#f-lm');if(flm)flm.oninput=function(){S.form.load_mw=this.value};
+const fgm=$('#f-gm');if(fgm)fgm.oninput=function(){S.form.gen_mw=this.value};
+const fln=$('#f-ln');if(fln)fln.oninput=function(){S.form.line_name=this.value};
+const feq=$('#f-eq');if(feq)feq.oninput=function(){S.form.equipment_name=this.value};
+const fts=$('#f-ts');if(fts)fts.onchange=function(){S.form.event_time_start=this.value};
+const fte=$('#f-te');if(fte)fte.onchange=function(){S.form.event_time_end=this.value};
+const fong=$('#f-ong');if(fong)fong.onclick=function(){S.form.is_ongoing=!S.form.is_ongoing;if(S.form.is_ongoing)S.form.event_time_end='';render()};
+const fgd=$('#f-gd');if(fgd)fgd.onclick=function(){S.form.is_grid_disturbance=!S.form.is_grid_disturbance;render()};
+const frsn=$('#f-rsn');if(frsn)frsn.oninput=function(){S.form.reason=this.value};
+const farea=$('#f-area');if(farea)farea.oninput=function(){S.form.area_affected=this.value};
+const fca=$('#f-ca');if(fca)fca.oninput=function(){S.form.corrective_action=this.value};
+const frem=$('#f-rem');if(frem)frem.oninput=function(){S.form.remarks=this.value};
+$$('[data-dyn]').forEach(el=>{el.oninput=el.onchange=function(){S.form.dynamic_fields[this.dataset.dyn]=this.value}});
+const bsub=$('#b-submit');if(bsub)bsub.onclick=doSubmit;
+
+// Affected elements
+const aesel=$('#ae-sel');if(aesel)aesel.onchange=function(){const fw=$('#ae-fw');if(fw)fw.style.display=this.value==='__free'?'block':'none'};
+const bae=$('#b-add-ae');if(bae)bae.onclick=function(){const sel=$('#ae-sel');if(!sel||!sel.value)return;
+if(sel.value==='__free'){const nm=$('#ae-fn');if(!nm?.value){toast('Enter name',true);return}S.form.affected_elements.push({name:nm.value,element_id:null,status:'Restored',time:'',load_mw:'',gen_mw:'',is_free_text:true})}
+else{const els=S.elements[S.form.station_id]||[];const el=els.find(e=>e.id==sel.value);if(!el)return;S.form.affected_elements.push({name:el.name,element_id:el.id,status:'Restored',time:'',load_mw:'',gen_mw:'',is_free_text:false})}render()};
+$$('[data-rae]').forEach(b=>b.onclick=function(){S.form.affected_elements.splice(parseInt(this.dataset.rae),1);render()});
+$$('[data-ae-st]').forEach(el=>el.onchange=function(){S.form.affected_elements[this.dataset.aeSt].status=this.value});
+$$('[data-ae-tm]').forEach(el=>el.onchange=function(){S.form.affected_elements[this.dataset.aeTm].time=this.value});
+$$('[data-ae-lm]').forEach(el=>el.oninput=function(){S.form.affected_elements[this.dataset.aeLm].load_mw=this.value});
+$$('[data-ae-gm]').forEach(el=>el.oninput=function(){S.form.affected_elements[this.dataset.aeGm].gen_mw=this.value});
+
+// Curtailment entries
+const bce=$('#b-add-ce');if(bce)bce.onclick=function(){const sub=$('#ce-sub');if(!sub?.value){toast('Enter substation',true);return}S.form.curtailment_entries.push({substation:sub.value,instructed_mw:'',actual_mw:'',feeder:''});render()};
+$$('[data-rce]').forEach(b=>b.onclick=function(){S.form.curtailment_entries.splice(parseInt(this.dataset.rce),1);render()});
+$$('[data-ce-instr]').forEach(el=>el.oninput=function(){S.form.curtailment_entries[this.dataset.ceInstr].instructed_mw=this.value});
+$$('[data-ce-actual]').forEach(el=>el.oninput=function(){S.form.curtailment_entries[this.dataset.ceActual].actual_mw=this.value});
+$$('[data-ce-fdr]').forEach(el=>el.oninput=function(){S.form.curtailment_entries[this.dataset.ceFdr].feeder=this.value});
+
+// History
+$$('[data-restore]').forEach(b=>b.onclick=function(){const ev=S.events.find(e=>e.id==this.dataset.restore);if(!ev)return;S.restoreEvt=ev;S.restoreForm={event_time_end:'',restoration_remarks:'',corrective_action:ev.corrective_action||''};S.modal='restore';render()});
+$$('[data-dup]').forEach(b=>b.onclick=function(){const ev=S.events.find(e=>e.id==this.dataset.dup);if(ev)doDup(ev)});
+$$('[data-concur]').forEach(b=>b.onclick=function(){S.md={evId:parseInt(this.dataset.concur)};S.modal='concur';render()});
+
+// Restore modal
+const brte=$('#r-te');if(brte)brte.onchange=function(){S.restoreForm.event_time_end=this.value};
+const brca=$('#r-ca');if(brca)brca.oninput=function(){S.restoreForm.corrective_action=this.value};
+const brrm=$('#r-rm');if(brrm)brrm.oninput=function(){S.restoreForm.restoration_remarks=this.value};
+const bdor=$('#b-do-rest');if(bdor)bdor.onclick=doRestore;
+
+// Admin gates
+const buna=$('#b-una');if(buna)buna.onclick=function(){const pw=$('#g-na')?.value;if(pw===S.selectedNodal?.admin_password){S.adminUnlocked=true;render()}else toast('Incorrect',true)};
+const buns=$('#b-uns');if(buns)buns.onclick=function(){const pw=$('#g-sldc')?.value;if(pw===SLDC_PW){S.sldcUnlocked=true;render()}else toast('Incorrect',true)};
+
+// Station CRUD
+const bast=$('#b-add-st');if(bast)bast.onclick=function(){S.md={};S.modal='station';render()};
+$$('[data-edit-st]').forEach(b=>b.onclick=function(){const s=S.stations.find(x=>x.id==this.dataset.editSt);if(s)S.md={...s};S.modal='station';render()});
+$$('[data-del-st]').forEach(b=>b.onclick=async function(){if(!confirm('Deactivate this station?'))return;setL(true);try{await softDeleteStation(parseInt(this.dataset.delSt));toast('Station deactivated')}catch(e){toast(e.message,true)}setL(false)});
+const bdost=$('#b-do-st');if(bdost)bdost.onclick=async function(){const d={...S.md,name:$('#m-sn')?.value,voltage_level:$('#m-sv')?.value||null,licensee:$('#m-sl')?.value||null,bus_configuration:$('#m-sbc')?.value||null};
+if(!d.name){toast('Name required',true);return}setL(true);try{await upsertStation(d);S.modal=null;toast('Saved')}catch(e){toast(e.message,true)}setL(false)};
+
+// Element CRUD
+$$('[data-add-el]').forEach(b=>b.onclick=function(){S.md={station_id:parseInt(this.dataset.addEl)};S.modal='element';render()});
+$$('[data-edit-el]').forEach(b=>b.onclick=function(){for(const sid in S.elements){const el=S.elements[sid].find(e=>e.id==this.dataset.editEl);if(el){S.md={...el};S.modal='element';render();return}}});
+$$('[data-del-el]').forEach(b=>b.onclick=async function(){if(!confirm('Deactivate?'))return;setL(true);try{await softDeleteElement(parseInt(this.dataset.delEl));toast('Deactivated')}catch(e){toast(e.message,true)}setL(false)});
+const bdoel=$('#b-do-el');if(bdoel)bdoel.onclick=async function(){const d={...S.md,name:$('#m-en')?.value,element_type:$('#m-ety')?.value,voltage_level:$('#m-evl')?.value||null,details:$('#m-edt')?.value||null,terminal_station_1:$('#m-et1')?.value||null,terminal_station_2:$('#m-et2')?.value||null};
+if(!d.name||!d.element_type){toast('Name and type required',true);return}setL(true);try{await upsertElement(d);S.modal=null;toast('Saved')}catch(e){toast(e.message,true)}setL(false)};
+
+// Nodal CRUD
+const banc=$('#b-add-nc');if(banc)banc.onclick=function(){S.md={};S.modal='nodal';render()};
+$$('[data-edit-nc]').forEach(b=>b.onclick=function(){const nc=S.nodals.find(x=>x.id==this.dataset.editNc);if(nc)S.md={...nc};S.modal='nodal';render()});
+$$('[data-del-nc]').forEach(b=>b.onclick=async function(){if(!confirm('Deactivate this nodal centre?'))return;setL(true);try{await softDeleteNodal(parseInt(this.dataset.delNc));toast('Deactivated')}catch(e){toast(e.message,true)}setL(false)});
+const bdonc=$('#b-do-nc');if(bdonc)bdonc.onclick=async function(){const d={...S.md,name:$('#m-nn')?.value,short_code:$('#m-ncd')?.value,admin_password:$('#m-nap')?.value,operator_password:$('#m-nop')?.value,contact_name:$('#m-ncn')?.value};
+if(!d.name||!d.short_code||!d.admin_password||!d.operator_password){toast('Fill required fields',true);return}setL(true);try{await upsertNodal(d);S.modal=null;toast('Saved')}catch(e){toast(e.message,true)}setL(false)};
+
+// Event Type CRUD
+const baet=$('#b-add-et');if(baet)baet.onclick=function(){S.md={impact_categories:[],field_mappings:[]};S.modal='eventtype';render()};
+$$('[data-edit-et]').forEach(b=>b.onclick=function(){const et=S.eventTypes.find(x=>x.id==this.dataset.editEt);if(!et)return;
+const flds=(S.etFields[et.id]||[]).map(f=>({field_id:f.field_id,is_required:f.required,display_order:f.order||99}));
+S.md={...et,field_mappings:flds};S.modal='eventtype';render()});
+$$('[data-del-et]').forEach(b=>b.onclick=async function(){if(!confirm('Deactivate this event type?'))return;setL(true);try{await softDeleteEventType(parseInt(this.dataset.delEt));toast('Deactivated')}catch(e){toast(e.message,true)}setL(false)});
+// Impact category pills
+$$('[data-cat]').forEach(p=>p.onclick=function(){const c=this.dataset.cat;const cats=S.md.impact_categories||[];const idx=cats.indexOf(c);if(idx>=0)cats.splice(idx,1);else cats.push(c);S.md.impact_categories=cats;render()});
+// Field include checkbox - toggle adds/removes from field_mappings and re-renders
+$$('[data-fm]').forEach(cb=>cb.onchange=function(){
+const fid=parseInt(this.dataset.fm);
+if(!S.md.field_mappings)S.md.field_mappings=[];
+if(this.checked){
+// Add to mappings with next available order
+const maxOrd=S.md.field_mappings.reduce((m,f)=>Math.max(m,f.display_order||0),0);
+S.md.field_mappings.push({field_id:fid,is_required:false,display_order:maxOrd+1});
+}else{
+S.md.field_mappings=S.md.field_mappings.filter(m=>m.field_id!==fid);
+}
+// Also capture any existing Req/Order values before re-render
+S.md.field_mappings.forEach(fm=>{
+const rq=$('[data-fmr="'+fm.field_id+'"]');if(rq)fm.is_required=rq.checked;
+const ord=$('[data-fmo="'+fm.field_id+'"]');if(ord&&ord.value)fm.display_order=parseInt(ord.value)||99;
+});
+// Capture other form fields before re-render
+S.md.code=$('#m-etc')?.value||S.md.code;
+S.md.name=$('#m-etn')?.value||S.md.name;
+S.md.description=$('#m-etd')?.value||S.md.description;
+render()});
+const bdoet=$('#b-do-et');if(bdoet)bdoet.onclick=async function(){
+const d={...S.md,code:$('#m-etc')?.value,name:$('#m-etn')?.value,description:$('#m-etd')?.value||null};
+const mappings=[];
+S.fieldDefs.forEach(fd=>{const cb=$('[data-fm="'+fd.id+'"]');const rq=$('[data-fmr="'+fd.id+'"]');const ord=$('[data-fmo="'+fd.id+'"]');
+if(cb?.checked)mappings.push({field_id:fd.id,is_required:rq?.checked||false,display_order:parseInt(ord?.value)||99})});
+mappings.sort((a,b)=>a.display_order-b.display_order);
+d.field_mappings=mappings;
+if(!d.code||!d.name){toast('Code and name required',true);return}
+setL(true);try{await upsertEventType(d);S.modal=null;toast('Saved')}catch(e){toast(e.message,true)}setL(false)};
+
+// Cause Category CRUD
+const bacc=$('#b-add-cc');if(bacc)bacc.onclick=function(){S.md={};S.modal='cause';render()};
+$$('[data-edit-cc]').forEach(b=>b.onclick=function(){const c=S.causeCategories.find(x=>x.id==this.dataset.editCc);if(c)S.md={...c};S.modal='cause';render()});
+$$('[data-del-cc]').forEach(b=>b.onclick=async function(){if(!confirm('Deactivate?'))return;setL(true);try{await softDeleteCauseCat(parseInt(this.dataset.delCc));toast('Deactivated')}catch(e){toast(e.message,true)}setL(false)});
+const bdocc=$('#b-do-cc');if(bdocc)bdocc.onclick=async function(){const d={...S.md,name:$('#m-ccn')?.value,description:$('#m-ccd')?.value||null};
+if(!d.name){toast('Name required',true);return}setL(true);try{await upsertCauseCat(d);S.modal=null;toast('Saved')}catch(e){toast(e.message,true)}setL(false)};
+
+// Utility CRUD
+const baut=$('#b-add-ut');if(baut)baut.onclick=function(){S.md={utility_type:'TRANSMISSION'};S.modal='utility';render()};
+$$('[data-edit-ut]').forEach(b=>b.onclick=function(){const u=S.utilities.find(x=>x.id==this.dataset.editUt);if(u)S.md={...u};S.modal='utility';render()});
+$$('[data-del-ut]').forEach(b=>b.onclick=async function(){if(!confirm('Deactivate?'))return;setL(true);try{await softDeleteUtility(parseInt(this.dataset.delUt));toast('Deactivated')}catch(e){toast(e.message,true)}setL(false)});
+const bdout=$('#b-do-ut');if(bdout)bdout.onclick=async function(){const d={...S.md,name:$('#m-utn')?.value,short_code:$('#m-utc')?.value,utility_type:$('#m-utt')?.value};
+if(!d.name||!d.short_code){toast('Name and code required',true);return}setL(true);try{await upsertUtility(d);S.modal=null;toast('Saved')}catch(e){toast(e.message,true)}setL(false)};
+
+// Field Definition CRUD
+const bafd=$('#b-add-fd');if(bafd)bafd.onclick=function(){S.md={field_type:'TEXT',config:{},display_order:99};S.modal='fieldmaster';render()};
+$$('[data-edit-fd]').forEach(b=>b.onclick=function(){const fd=S.fieldDefs.find(x=>x.id==this.dataset.editFd);if(fd)S.md={...fd};S.modal='fieldmaster';render()});
+$$('[data-del-fd]').forEach(b=>b.onclick=async function(){if(!confirm('Deactivate this field? It will be hidden from future use but preserved in historical events.'))return;setL(true);try{await softDeleteFieldDef(parseInt(this.dataset.delFd));toast('Field deactivated')}catch(e){toast(e.message,true)}setL(false)});
+const bdofd=$('#b-do-fd');if(bdofd)bdofd.onclick=async function(){
+const d={...S.md,label:$('#m-fdl')?.value,field_type:$('#m-fdt')?.value,description:$('#m-fdh')?.value||null,display_order:parseInt($('#m-fdo')?.value)||99};
+if(!d.id)d.code=$('#m-fdc')?.value;
+if(d.field_type==='SELECT'){const raw=$('#m-fdopts')?.value||'';d.options=raw.split('\n').map(s=>s.trim()).filter(Boolean)}
+if(d.field_type==='NUMBER'){d.min=parseFloat($('#m-fdmin')?.value)||0;d.step=parseFloat($('#m-fdstep')?.value)||1}
+if(!d.code||!d.label||!d.field_type){toast('Code, label and type required',true);return}
+setL(true);try{await upsertFieldDef(d);S.modal=null;toast('Field saved')}catch(e){toast(e.message,true)}setL(false)};
+
+// Concurrence
+const bdoconcur=$('#b-do-concur');if(bdoconcur)bdoconcur.onclick=async function(){const reason=$('#m-cr')?.value;setL(true);try{await sldcConcur(S.md.evId,reason);await loadSldcEvents();await loadEv(S.selectedNodal?.id);S.modal=null;toast('Event concurred')}catch(e){toast(e.message,true)}setL(false)};
+
+// Report preview copy
+const bcrpt=$('#b-copy-rpt');if(bcrpt)bcrpt.onclick=function(){const msg=$('#m-rpt-msg')?.value||'';navigator.clipboard?.writeText(msg).then(()=>{toast('Copied!');S.modal=null;render()}).catch(()=>toast('Copy failed',true))};
+
+// SLDC view toggle
+$$('[data-sv]').forEach(b=>b.onclick=async function(){S.sldcView=this.dataset.sv;
+if(S.sldcView==='events'&&!S.sldcEvents.length){setL(true);await loadSldcEvents();S.sldcLastCount=S.sldcEvents.length;setL(false)}
+// Start auto-refresh when entering events view
+if(S.sldcView==='events'&&!S.sldcRefreshTimer){
+S.sldcRefreshTimer=setInterval(async()=>{
+if(S.sldcView!=='events'||S.tab!=='sldc')return;
+const prevCount=S.sldcEvents.length;
+await loadSldcEvents();
+const newCount=S.sldcEvents.length;
+if(newCount>prevCount){S.sldcNewCount=newCount-prevCount;
+if(S.sldcSoundOn){try{const ac=new(window.AudioContext||window.webkitAudioContext)();const o=ac.createOscillator();const g=ac.createGain();o.connect(g);g.connect(ac.destination);o.frequency.value=800;g.gain.value=0.15;o.start();o.stop(ac.currentTime+0.15)}catch(e){}}
+render()}else{render()}},60000)}
+if(S.sldcView==='config'&&S.sldcRefreshTimer){clearInterval(S.sldcRefreshTimer);S.sldcRefreshTimer=null}
+render()});
+
+// Sound toggle
+const bsnd=$('#b-snd-tog');if(bsnd)bsnd.onclick=function(){S.sldcSoundOn=!S.sldcSoundOn;render()};
+
+// Report shift selection
+$$('[data-rshift]').forEach(b=>b.onclick=function(){S.sldcReportShift=this.dataset.rshift;S.sldcReportExcluded={};render()});
+
+// Report checkboxes
+$$('[data-rpt-cb]').forEach(cb=>cb.onchange=function(){const id=parseInt(this.dataset.rptCb);if(this.checked)delete S.sldcReportExcluded[id];else S.sldcReportExcluded[id]=true;render()});
+
+// Generate message
+const bgen=$('#b-gen-msg');if(bgen)bgen.onclick=function(){
+const rShift=S.sldcReportShift||curShift();
+const reportEvts=S.sldcEvents.filter(e=>e.sldc_status==='accepted'&&e.shift_period===rShift&&!S.sldcReportExcluded[e.id]);
+const msg=genReportMsg(reportEvts);
+S.md={generatedMsg:msg};S.modal='reportpreview';render()};
+
+// Copy message
+const bcopy=$('#b-copy-msg');if(bcopy)bcopy.onclick=function(){
+const rShift=S.sldcReportShift||curShift();
+const reportEvts=S.sldcEvents.filter(e=>e.sldc_status==='accepted'&&e.shift_period===rShift&&!S.sldcReportExcluded[e.id]);
+const msg=genReportMsg(reportEvts);
+navigator.clipboard?.writeText(msg).then(()=>toast('Copied to clipboard')).catch(()=>toast('Copy failed',true))};
+
+// SLDC filters
+const bsf=$('#b-sf-apply');if(bsf)bsf.onclick=async function(){
+S.sldcFilter.nodal_id=$('#sf-nc')?.value||'';
+S.sldcFilter.event_type_id=$('#sf-et')?.value||'';
+S.sldcFilter.status=$('#sf-st')?.value||'';
+S.sldcFilter.is_grid_disturbance=$('#sf-gd')?.value||'';
+S.sldcFilter.date_from=$('#sf-df')?.value||'';
+S.sldcFilter.date_to=$('#sf-dt')?.value||'';
+setL(true);await loadSldcEvents();setL(false);render()};
+
+// SLDC accept/dismiss
+$$('[data-accept]').forEach(b=>b.onclick=async function(){setL(true);try{await sldcAccept(parseInt(this.dataset.accept));await loadSldcEvents();toast('Event accepted')}catch(e){toast(e.message,true)}setL(false)});
+$$('[data-dismiss]').forEach(b=>b.onclick=async function(){const rm=prompt('Dismiss reason (optional):');setL(true);try{await sldcDismiss(parseInt(this.dataset.dismiss),rm);await loadSldcEvents();toast('Event dismissed')}catch(e){toast(e.message,true)}setL(false)});
+
+// Cancel + modal bg
+const bc=$('#b-cancel');if(bc)bc.onclick=function(){S.modal=null;render()};
+const mbg=$('#mbg');if(mbg)mbg.onclick=function(e){if(e.target===this){S.modal=null;render()}}}
+
+// ═══ INIT ═══
+async function init(){setL(true);try{await loadCfg()}catch(e){console.error(e);toast('Cannot connect',true)}setL(false)}
+init();
+</script>
+</body>
+</html>
